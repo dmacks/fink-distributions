@@ -2,68 +2,75 @@
 Info4: <<
 Package: meson-py%type_pkg[python]
 Version: 0.55.0
-Revision: 1
-Maintainer: Leigh Smith <leigh@leighsmith.com>
+Revision: 2
+Maintainer: Daniel Macks <dmacks@netspace.org>
 Type: python (3.6 3.7 3.8)
 # setuptools needed because meson uses pkg_resources package.
 Depends: <<
+	pkgconfig,
 	python%type_pkg[python],
 	setuptools-tng-py%type_pkg[python],
- 	ninja (>= 1.7-1)
+	ninja (>= 1.7-1)
 <<
 Source: https://files.pythonhosted.org/packages/source/m/meson/meson-%v.tar.gz
 Source-Checksum: SHA256(0a1ae2bfe2ae14ac47593537f93290fb79e9b775c55b4c53c282bc3ca3745b35)
-DocFiles: COPYING README.md PKG-INFO
+DocFiles: COPYING README.md
 PatchScript: <<
-    perl -pi -e 's|(/bin/env python)(3)|${1}%type_raw[python]|;' *.py mesonbuild/*.py tools/*.py test*/*/*/*.py
-    perl -pi -e "s|(python)(3)(')|\${1}%type_raw[python]\${3}|;" test\ cases/python/[1345]*/meson.build
-    perl -pi -e "s|(python)(3)(')|\${1}-%type_raw[python]\${3}|;" test\ cases/python/2*/meson.build
-    perl -pi -e "s|(exec =)|add_project_arguments('-I%p/opt/hdf5.v1.10/include', language: ['c', 'cpp'])\n\$1|;" "test cases/frameworks/25 hdf5/meson.build"
-    perl -pi -e "s|(exec =)|add_project_link_arguments('-L%p/opt/hdf5.v1.10/lib', language: ['c', 'cpp'])\n\$1|;" "test cases/frameworks/25 hdf5/meson.build"
+	perl -pi -e 's|(/bin/env python)(3)|${1}%type_raw[python]|;' *.py mesonbuild/*.py tools/*.py test*/*/*/*.py
+	perl -pi -e "s|(python)(3)(')|\${1}%type_raw[python]\${3}|;" test\ cases/python/[1345]*/meson.build
+	perl -pi -e "s|(python)(3)(')|\${1}-%type_raw[python]\${3}|;" test\ cases/python/2*/meson.build
+	perl -pi -e "s|(exec =)|add_project_arguments('-I%p/opt/hdf5.v1.10/include', language: ['c', 'cpp'])\n\$1|;" "test cases/frameworks/25 hdf5/meson.build"
+	perl -pi -e "s|(exec =)|add_project_link_arguments('-L%p/opt/hdf5.v1.10/lib', language: ['c', 'cpp'])\n\$1|;" "test cases/frameworks/25 hdf5/meson.build"
+	perl -pi -e 's|(/usr)(/bin/python)(3)|%p${2}%type_raw[python]|;' data/com.mesonbuild.install.policy
+	perl -pi -e 's|(/usr)(/bin/meson)|%p${2}-py%type_pkg[python]|;' data/com.mesonbuild.install.policy
 <<
 CompileScript: <<
- %p/bin/python%type_raw[python] setup.py build
+	%p/bin/python%type_raw[python] setup.py build
 <<
 # Rename the installed files to match the python variant.
 InstallScript: <<
- %p/bin/python%type_raw[python] setup.py install --root %d
-  mv %i/bin/meson %i/bin/meson-py%type_pkg[python]
-  mv %i/share/man/man1/meson.1 %i/share/man/man1/meson-py%type_pkg[python].1
-  perl -pi -e 's|(/usr)(/bin/python)(3)|%p${2}%type_raw[python]|;' %i/share/polkit-1/actions/com.mesonbuild.install.policy
-  perl -pi -e 's|(/usr)(/bin/meson)|%p${2}-py%type_pkg[python]|;' %i/share/polkit-1/actions/com.mesonbuild.install.policy
-  mv %i/share/polkit-1/actions/com.mesonbuild.install.policy %i/share/polkit-1/actions/com.mesonbuild.install.policy-py%type_pkg[python]
+	%p/bin/python%type_raw[python] setup.py install --root %d
+	mv %i/bin/meson %i/bin/meson-py%type_pkg[python]
+	mv %i/share/man/man1/meson.1 %i/share/man/man1/meson-py%type_pkg[python].1
+	mv %i/share/polkit-1/actions/com.mesonbuild.install.policy %i/share/polkit-1/actions/com.mesonbuild.install.policy-py%type_pkg[python]
 <<
 PostInstScript: <<
-  update-alternatives --install %p/bin/meson meson %p/bin/meson-py%type_pkg[python] %type_pkg[python] --slave %p/share/man/man1/meson.1 meson.1 %p/share/man/man1/meson-py%type_pkg[python].1 --slave %p/share/polkit-1/actions/com.mesonbuild.install.policy com.mesonbuild.install.policy %p/polkit-1/actions/com.mesonbuild.install.policy-py%type_pkg[python]
+	update-alternatives --install %p/bin/meson meson %p/bin/meson-py%type_pkg[python] %type_pkg[python] \
+		--slave %p/share/man/man1/meson.1 meson.1 %p/share/man/man1/meson-py%type_pkg[python].1 \
+		--slave %p/share/polkit-1/actions/com.mesonbuild.install.policy com.mesonbuild.install.policy %p/polkit-1/actions/com.mesonbuild.install.policy-py%type_pkg[python]
 <<
 PreRmScript: <<
-  if [ $1 != "upgrade" ]
-  then
-    update-alternatives --remove meson %p/bin/meson-py%type_pkg[python]
-  fi
+	if [ $1 != "upgrade" ]
+	then
+		update-alternatives --remove meson %p/bin/meson-py%type_pkg[python]
+	fi
 <<
 InfoTest: <<
-  TestDepends: hdf5.100.v1.10
-  TestScript: %p/bin/python%type_raw[python] -B run_tests.py || exit 1
-  TestSuiteSize: medium
+	TestDepends: hdf5.100.v1.10, hdf5-cpp.100.v1.10
+	TestScript: %p/bin/python%type_raw[python] -B run_tests.py || exit 1
+	TestSuiteSize: medium
 <<
 Description: Cross-platform build system
 DescDetail: <<
 Meson is an open source build system meant to be both extremely fast,
-and, even more importantly, as user friendly as possible. 
+and, even more importantly, as user friendly as possible.
 
 The main design point of Meson is that every moment a developer
 spends writing or debugging build definitions is a second wasted.
 So is every second spent waiting for the build system to actually
-start compiling code. 
+start compiling code.
 <<
 DescPackaging: <<
-Ninja only needed for Ninja backend.
-Skipping hotdoc build of markdown docs for now.
-hdf5 tests are only run when installed, but need to be pointed to install loc;
-for consistency made hdf5.100.v1.10 TestDepends.
-Fixed some tests by setting python3 to the versioned executable, but some
-failures remaining (e.g. tests trying to use Framework Python version etc.).
+	Ninja only needed for Ninja backend.
+
+	Skipping hotdoc build of markdown docs for now.
+
+	hdf5 tests are only run when installed, but need to be pointed to
+	install loc; for consistency made hdf5.100.v1.10 TestDepends.
+
+	Fixed some tests by setting python3 to the versioned executable,
+	but some failures remaining (e.g. tests trying to use Framework
+	Python version etc.).
 <<
 License: BSD
 Homepage: http://www.mesonbuild.com
