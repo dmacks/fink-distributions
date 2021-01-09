@@ -1,8 +1,8 @@
 # -*- coding: utf-8; tab-width: 4 -*-
 Info4: <<
 Package: meson-py%type_pkg[python]
-Version: 0.55.0
-Revision: 2
+Version: 0.56.1
+Revision: 1
 Maintainer: Daniel Macks <dmacks@netspace.org>
 Type: python (3.6 3.7 3.8)
 # setuptools needed because meson uses pkg_resources package.
@@ -13,7 +13,7 @@ Depends: <<
 	ninja (>= 1.7-1)
 <<
 Source: https://files.pythonhosted.org/packages/source/m/meson/meson-%v.tar.gz
-Source-Checksum: SHA256(0a1ae2bfe2ae14ac47593537f93290fb79e9b775c55b4c53c282bc3ca3745b35)
+Source-Checksum: SHA256(5780725304eaa28aac5e7de99d2d8d045112fbc10cf9f4181498b877de0ecf28)
 DocFiles: COPYING README.md
 PatchScript: <<
 	perl -pi -e 's|(/bin/env python)(3)|${1}%type_raw[python]|;' *.py mesonbuild/*.py tools/*.py test*/*/*/*.py
@@ -70,7 +70,12 @@ DescPackaging: <<
 
 	Fixed some tests by setting python3 to the versioned executable,
 	but some failures remaining (e.g. tests trying to use Framework
-	Python version etc.).
+	Python version). Some others have large dep trees or that would be
+	circular BDep on meson so we can't require that they pass.
+
+	Some tests fail due to creating a static archive with no members,
+	which isn't possible with darwin's 'ar'. See:
+	https://github.com/mesonbuild/meson/issues/3735
 <<
 License: BSD
 Homepage: http://www.mesonbuild.com
