@@ -76,6 +76,7 @@ DescPackaging: <<
 	Some tests fail due to creating a static archive with no members,
 	which isn't possible with darwin's 'ar'. See:
 	https://github.com/mesonbuild/meson/issues/3735
+	https://github.com/mesonbuild/meson/pull/3749
 <<
 License: BSD
 Homepage: http://www.mesonbuild.com
