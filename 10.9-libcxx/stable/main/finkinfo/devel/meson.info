@@ -1,10 +1,10 @@
 Package: meson
-Version: 0.56.1
+Version: 0.62.2
 Revision: 1
 Type: bundle
 BuildDepends: fink (>= 0.32)
 RuntimeDepends: <<
-	meson-py38 | meson-py37 | meson-py36
+	meson-py310 (>= %v-1)
 <<
 Maintainer: Daniel Macks <dmacks@netspace.org>
 Description: Cross-platform build system (any-python)

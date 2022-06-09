@@ -1,28 +1,29 @@
 # -*- coding: utf-8; tab-width: 4 -*-
-Info4: <<
+Info2: <<
 Package: meson-py%type_pkg[python]
-Version: 0.56.1
+Version: 0.62.2
 Revision: 1
 Maintainer: Daniel Macks <dmacks@netspace.org>
-Type: python (3.6 3.7 3.8)
-# setuptools needed because meson uses pkg_resources package.
+# current minimum: 3.7
+Type: python (3.10)
+BuildDepends: <<
+	setuptools-tng-py%type_pkg[python]
+<<
 Depends: <<
 	pkgconfig,
 	python%type_pkg[python],
-	setuptools-tng-py%type_pkg[python],
-	ninja (>= 1.7-1)
+	ninja (>= 1.9-1)
 <<
 Source: https://files.pythonhosted.org/packages/source/m/meson/meson-%v.tar.gz
-Source-Checksum: SHA256(5780725304eaa28aac5e7de99d2d8d045112fbc10cf9f4181498b877de0ecf28)
+Source-Checksum: SHA256(a7669e4c4110b06b743d57cc5d6432591a6677ef2402139fe4f3d42ac13380b0)
 DocFiles: COPYING README.md
 PatchScript: <<
-	perl -pi -e 's|(/bin/env python)(3)|${1}%type_raw[python]|;' *.py mesonbuild/*.py tools/*.py test*/*/*/*.py
+	perl -pi -e 's|^#!/usr/bin/env python3|#!%p/bin/python%type_raw[python]|;' *.py mesonbuild/*.py tools/*.py test\ cases/*/*/*.py cases/*/*/*/*.py packaging/*.py
 	perl -pi -e "s|(python)(3)(')|\${1}%type_raw[python]\${3}|;" test\ cases/python/[1345]*/meson.build
 	perl -pi -e "s|(python)(3)(')|\${1}-%type_raw[python]\${3}|;" test\ cases/python/2*/meson.build
-	perl -pi -e "s|(exec =)|add_project_arguments('-I%p/opt/hdf5.v1.10/include', language: ['c', 'cpp'])\n\$1|;" "test cases/frameworks/25 hdf5/meson.build"
-	perl -pi -e "s|(exec =)|add_project_link_arguments('-L%p/opt/hdf5.v1.10/lib', language: ['c', 'cpp'])\n\$1|;" "test cases/frameworks/25 hdf5/meson.build"
-	perl -pi -e 's|(/usr)(/bin/python)(3)|%p${2}%type_raw[python]|;' data/com.mesonbuild.install.policy
-	perl -pi -e 's|(/usr)(/bin/meson)|%p${2}-py%type_pkg[python]|;' data/com.mesonbuild.install.policy
+	perl -pi -e "s|(^# NOTE:.*)|\1\nadd_project_arguments('-I%p/opt/hdf5.v1.12/include', language: ['c', 'cpp'])\nadd_project_link_arguments(['-L%p/opt/hdf5.v1.12/lib', '-lhdf5'], language: ['c', 'cpp'])\n|;s|(.*library not found.*)|#\1|;" test\ cases/frameworks/25\ hdf5/meson.build
+	perl -pi -e 's|/usr/bin/python3|%p/bin/python%type_raw[python]|;' data/com.mesonbuild.install.policy
+	perl -pi -e 's|/usr/bin/meson|%p/bin/meson-py%type_pkg[python]|;' data/com.mesonbuild.install.policy
 <<
 CompileScript: <<
 	%p/bin/python%type_raw[python] setup.py build
@@ -46,7 +47,12 @@ PreRmScript: <<
 	fi
 <<
 InfoTest: <<
-	TestDepends: hdf5.100.v1.10, hdf5-cpp.100.v1.10
+	TestDepends: <<
+		hdf5.200.v1.12,
+		hdf5-cpp.200.v1.12,
+		pluggy-py%type_pkg[python],
+		pytest-py%type_pkg[python]
+	<<		
 	TestScript: %p/bin/python%type_raw[python] -B run_tests.py || exit 1
 	TestSuiteSize: medium
 <<
@@ -65,18 +71,40 @@ DescPackaging: <<
 
 	Skipping hotdoc build of markdown docs for now.
 
-	hdf5 tests are only run when installed, but need to be pointed to
-	install loc; for consistency made hdf5.100.v1.10 TestDepends.
+	hdf5 (among other) tests are only run when installed, but these in
+	particular need to be pointed to install loc; for consistency made
+	hdf5.200.v1.12 TestDepends.
 
-	Fixed some tests by setting python3 to the versioned executable,
-	but some failures remaining (e.g. tests trying to use Framework
-	Python version). Some others have large dep trees or that would be
-	circular BDep on meson so we can't require that they pass.
+	Fixed some tests by setting python3 to the versioned executable.
+
+	Some others have large dep trees or that would be circular BDep on
+	meson so we can't require that they pass.
 
 	Some tests fail due to creating a static archive with no members,
-	which isn't possible with darwin's 'ar'. See:
+	which isn't possible with darwin's 'ar'. See for example:
 	https://github.com/mesonbuild/meson/issues/3735
 	https://github.com/mesonbuild/meson/pull/3749
+
+	Ignoring test-failures relating to -m32. It's up to maintainers to
+	make sure their packages build for correct mode (and if they try
+	to do multilib, its their own damn fault because OS X has no
+	longer has 32-bit libraries).
+
+	There appears to be a bug in the built-in pkg-config work-alike if
+	there's whitespace in the path, so don't do that. I assume this
+	feature also doesn't do fink flag-sorting, so maintainers may need
+	to provide work-arounds and should always use f-p-p.
+
+	Some test-fails are known on OS X, such as:
+		https://github.com/mesonbuild/meson/issues/7835
+	that might be due to clocking:
+		https://github.com/mesonbuild/meson/pull/7736
+	which would explain why several other test-fails relate to
+	triggering rebuild based on timestamps
+
+	Some tests fail because they are based on hard-coded expectations
+	of how some unrelated external lib is configured (for example,
+	pkg-config for gio-2.0)
 <<
 License: BSD
 Homepage: http://www.mesonbuild.com
