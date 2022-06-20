@@ -26,6 +26,7 @@ PatchScript: <<
 	perl -pi -e "s|(python)(3)(')|\${1}-%type_raw[python]\${3}|;" test\ cases/python/2*/meson.build
 	perl -pi -e "s|(^# NOTE:.*)|\1\nadd_project_arguments('-I%p/opt/hdf5.v1.12/include', language: ['c', 'cpp'])\nadd_project_link_arguments(['-L%p/opt/hdf5.v1.12/lib', '-lhdf5'], language: ['c', 'cpp'])\n|;s|(.*library not found.*)|#\1|;" test\ cases/frameworks/25\ hdf5/meson.build
 	perl -pi -e 's|/usr/bin/python3|%p/bin/python%type_raw[python]|;' data/com.mesonbuild.install.policy
+	perl -pi -e 's|/usr/bin/meson|%p/bin/meson|;' data/com.mesonbuild.install.policy
 <<
 CompileScript: <<
 	%p/bin/python%type_raw[python] setup.py build
@@ -40,7 +41,7 @@ InfoTest: <<
 		hdf5-cpp.200.v1.12,
 		pluggy-py%type_pkg[python],
 		pytest-py%type_pkg[python]
-	<<		
+	<<
 	TestScript: %p/bin/python%type_raw[python] -B run_tests.py || exit 1
 	TestSuiteSize: medium
 <<
