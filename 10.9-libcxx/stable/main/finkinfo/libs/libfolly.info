@@ -1,0 +1,81 @@
+Package: libfolly
+Version: 2022.12.05.00
+Revision: 1
+Source: https://github.com/facebook/folly/releases/download/v%v/folly-v%v.tar.gz
+Source-Checksum: SHA256(f08a7f7dceb7e37f3474a98d2a1106065351464e0834f75ff210873eeac4c717)
+BuildDepends: <<
+	boost1.68-nopython,
+	bzip2-dev,
+	cmake,
+	fink-buildenv-modules,
+	fink-package-precedence,
+	gcc12-compiler,
+	libdoubleconversion3-dev,
+	libevent2.1,
+	libfmt9-dev,
+	libgflags22-dev,
+	libglog1-dev,
+	liblzma5,
+	libsnappy1-dev,
+	libsodium23,
+	libzstd1-dev,
+	lz4-dev,
+	openssl110-dev,
+	pkgconfig
+<<
+GCC: 4.0
+NoSourceDirectory: true
+
+# The -std= flag is passed twice, from two different origins. Disable
+# the one that's done less-standardly (1z, via CXX_STD), retaining
+# CMAKE_CXX_STANDARD (defaults to 17).
+# See: https://github.com/facebook/folly/issues/1896
+# Not compatible with gnu++11 or gnu++14
+PatchScript: <<
+	perl -pi -e 's/-std=\$\{CXX_STD\}//' CMake/FollyCompilerUnix.cmake
+<<
+
+# Boost headers not clean under recent g++. -Wno-nonnull equivalent to
+# https://github.com/boostorg/concept_check/commit/affc79e04514b4cc4177967ced85f7674f3a6642
+#
+# How do to disable detection of: dwarf, libaio, liburing, liberty,
+# libunwind? Both of these fail:
+#   -DCMAKE_DISABLE_FIND_LIBAIO=TRUE
+#   -DCMAKE_DISABLE_FIND_LibAIO=TRUE
+#
+# General cmake bug uses -std=gnu++1z with C (not just C++), which is
+# itself an error prior to whatever the actual compiled-code test is
+# supposed to detect. Affected detections (which we therefore
+# hardcode): ASN1_TIME_diff (from libcrypto), libbz2, liblzma
+# * still using /lib/lib/liblzma for symbol detection
+CompileScript: <<
+#!/bin/sh -ev
+. %p/sbin/fink-buildenv-cmake.sh
+mkdir finkbuild
+pushd finkbuild
+cmake $FINK_CMAKE_ARGS \
+	-DCMAKE_ASM_COMPILER=%p/bin/gcc-fsf-12 \
+	-DCMAKE_C_COMPILER=%p/bin/gcc-fsf-12 \
+	-DCMAKE_CXX_COMPILER=%p/bin/g++-fsf-12 \
+	\
+	-DCMAKE_CXX_FLAGS=-Wno-nonnull \
+	\
+	-DBoost_DIR=%p/opt/boost-1_68 \
+	-DBoost_INCLUDE_DIR=%p/opt/boost-1_68/include \
+	\
+	-DFOLLY_HAVE_OPENSSL_ASN1_TIME_DIFF=TRUE \
+	-DBZIP2_INCLUDE_DIRS=%p/include \
+	-DBZIP2_LIBRARIES=%p/lib/libbz2.dylib \
+	-DLIBLZMA_INCLUDE_DIRS=%p/include \
+	-DLIBLZMA_LIBRARIES=%p/lib/liblzma.dylib \
+	-DLIBLZMA_LIBRARY_RELEASE=%p/lib/liblzma.dylib \
+	\
+	..
+make
+popd
+fink-package-precedence --depfile-ext='\.d' .
+<<
+Description: High-performance scalable C++ components
+Homepage: https://github.com/facebook/folly
+License: BSD
+Maintainer: Daniel Macks <dmacks@netspace.org>
