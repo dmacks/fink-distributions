@@ -1,0 +1,64 @@
+diff -Nurd perl-5.38.2.orig/Configure perl-5.38.2/Configure
+--- perl-5.38.2.orig/Configure	2023-11-28 06:57:27.000000000 -0500
++++ perl-5.38.2/Configure	2024-05-30 08:00:19.000000000 -0400
+@@ -108,8 +108,8 @@
+ fi
+ 
+ : Proper PATH setting
+-paths='/bin /usr/bin /usr/local/bin /usr/ucb /usr/local /usr/lbin'
+-paths="$paths /opt/bin /opt/local/bin /opt/local /opt/lbin"
++paths='/bin /usr/bin /usr/ucb /usr/lbin'
++paths="$paths /opt/bin @FINK_PREFIX@/bin @FINK_PREFIX@ /opt/lbin"
+ paths="$paths /usr/5bin /etc /usr/gnu/bin /usr/new /usr/new/bin /usr/nbin"
+ paths="$paths /opt/gnu/bin /opt/new /opt/new/bin /opt/nbin"
+ paths="$paths /sys5.3/bin /sys5.3/usr/bin /bsd4.3/bin /bsd4.3/usr/ucb"
+@@ -1455,7 +1455,7 @@
+ i_whoami=''
+ : Possible local include directories to search.
+ : Set locincpth to "" in a hint file to defeat local include searches.
+-locincpth="/usr/local/include /opt/local/include /usr/gnu/include"
++locincpth="@FINK_PREFIX@/include /usr/gnu/include"
+ locincpth="$locincpth /opt/gnu/include /usr/GNU/include /opt/GNU/include"
+ :
+ : no include file wanted by default
+@@ -1472,12 +1472,12 @@
+ : change the next line if compiling for Xenix/286 on Xenix/386
+ xlibpth='/usr/lib/386 /lib/386'
+ : Possible local library directories to search.
+-loclibpth="/usr/local/lib /opt/local/lib /usr/gnu/lib"
++loclibpth="@FINK_PREFIX@/lib /usr/gnu/lib"
+ loclibpth="$loclibpth /opt/gnu/lib /usr/GNU/lib /opt/GNU/lib"
+ 
+ : general looking path for locating libraries
+ glibpth="/lib /usr/lib $xlibpth"
+-glibpth="$glibpth /usr/ccs/lib /usr/ucblib /usr/local/lib"
++glibpth="$glibpth /usr/ccs/lib /usr/ucblib"
+ test -f /usr/shlib/libc.so && glibpth="/usr/shlib $glibpth"
+ test -f /shlib/libc.so     && glibpth="/shlib $glibpth"
+ test -d /usr/lib64         && glibpth="$glibpth /lib64 /usr/lib64 /usr/local/lib64"
+diff -Nurd perl-5.38.2.orig/cpan/ExtUtils-Constant/t/Constant.t perl-5.38.2/cpan/ExtUtils-Constant/t/Constant.t
+--- perl-5.38.2.orig/cpan/ExtUtils-Constant/t/Constant.t	2023-11-28 06:57:27.000000000 -0500
++++ perl-5.38.2/cpan/ExtUtils-Constant/t/Constant.t	2024-05-30 08:00:07.000000000 -0400
+@@ -112,6 +112,10 @@
+     # Normal relics
+     next if $^O eq 'os390' && $entry =~ /\.dbg$/;
+ 
++    # Side-effect of passing -MD to compiler (instrumentation for
++    # tracking dependencies)
++    next if $entry =~ /\.d$/;
++
+     print "# Extra file '$entry'\n";
+     $fail = 1;
+   }
+diff -Nurd perl-5.38.2.orig/t/porting/customized.dat perl-5.38.2/t/porting/customized.dat
+--- perl-5.38.2.orig/t/porting/customized.dat	2023-11-28 06:57:28.000000000 -0500
++++ perl-5.38.2/t/porting/customized.dat	2024-05-30 09:34:41.000000000 -0400
+@@ -8,7 +8,7 @@
+ Digest::MD5 cpan/Digest-MD5/MD5.pm cf2fd9d327f3e314e9e66bb6ecb7a62b4ec72767
+ Digest::MD5 cpan/Digest-MD5/MD5.xs dc40839d25ba5e2d6f42fc9b81b409f1d0dbfb0e
+ ExtUtils::Constant cpan/ExtUtils-Constant/lib/ExtUtils/Constant/Base.pm 7560e1018f806db5689dee78728ccb8374aea741
+-ExtUtils::Constant cpan/ExtUtils-Constant/t/Constant.t 165e9c7132b003fd192d32a737b0f51f9ba4999e
++ExtUtils::Constant cpan/ExtUtils-Constant/t/Constant.t d0ff5be0dd34c574a2da403008ef538fe92e4c99
+ Filter::Util::Call pod/perlfilter.pod d1e217d0bc6083755b9017050b8724472c58275a
+ IO::Socket::IP cpan/IO-Socket-IP/lib/IO/Socket/IP.pm a3390d0b3b617a0b810c75941bfc6e6d0be5b785
+ Locale::Maketext::Simple cpan/Locale-Maketext-Simple/lib/Locale/Maketext/Simple.pm 57ed38905791a17c150210cd6f42ead22a7707b6

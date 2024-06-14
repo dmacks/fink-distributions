@@ -1,0 +1,12 @@
+diff -Nurd perl-5.38.2.orig/dist/Time-Hires/t/clock.t perl-5.38.2/dist/Time-Hires/t/clock.t
+--- perl-5.38.2.orig/dist/Time-Hires/t/clock.t	2023-11-28 06:57:28.000000000 -0500
++++ perl-5.38.2/dist/Time-Hires/t/clock.t	2024-05-30 00:36:31.000000000 -0400
+@@ -70,7 +70,7 @@
+ 
+ SKIP: {
+     skip "no clock_nanosleep", 1
+-        unless &Time::HiRes::d_clock_nanosleep && has_symbol("CLOCK_REALTIME");
++        unless not &Time::HiRes::d_clock_nanosleep && has_symbol("CLOCK_REALTIME");
+     my $s = 1.5e9;
+     my $t = Time::HiRes::clock_nanosleep(&CLOCK_REALTIME, $s);
+     my $r = abs(1 - $t / $s);
