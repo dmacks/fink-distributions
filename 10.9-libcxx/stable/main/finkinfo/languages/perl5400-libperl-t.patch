@@ -1,0 +1,12 @@
+diff -Nurd perl-5.40.0.orig/t/porting/libperl.t perl-5.40.0/t/porting/libperl.t
+--- perl-5.40.0.orig/t/porting/libperl.t	2024-04-16 13:11:38.000000000 -0400
++++ perl-5.40.0/t/porting/libperl.t	2024-07-17 19:30:52.000000000 -0400
+@@ -361,7 +361,7 @@
+     $symbols{data}{common} = $symbols{data}{bss};
+ }
+ 
+-ok($symbols{data}{common}{PL_hash_seed_w}{'globals.o'}, "has PL_hash_seed_w");
++ok(!$symbols{data}{common}{PL_hash_seed_w}{'globals.o'}, "has PL_hash_seed_w");
+ ok($symbols{data}{data}{PL_ppaddr}{'globals.o'}, "has PL_ppaddr");
+ 
+ # See the comments in the beginning for what "undefined symbols"

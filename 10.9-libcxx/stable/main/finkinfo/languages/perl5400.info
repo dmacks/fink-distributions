@@ -1,0 +1,197 @@
+Package: perl5400
+Version: 5.40.0
+Revision: 1
+BuildDepends: fink (>= 0.32.0)
+Depends: %n-core (>= %v-%r)
+Conflicts: perl5162, perl5182, perl5184, perl5282, perl5302, perl5303, perl5400
+Replaces: perl5162, perl5182, perl5184, perl5282, perl5302, perl5303, perl5400
+License: Artistic
+Description: The Perl programming language, v. 5.40.0
+DescDetail: <<
+Perl is a high-level programming language with roots in C, sed, awk
+and shell scripting.  Perl is good at handling processes and files,
+and is especially good at handling text.  Perl's hallmarks are
+practicality and efficiency.  While it is used to do a lot of
+different things, Perl's most common applications are system
+administration utilities and web programming.  A large proportion of
+the CGI scripts on the web are written in Perl.
+
+Fink's perl packages retain the perl version subdirectories in the
+lib tree.  Without these, upgrading or downgrading Perl breaks all of
+the binary modules.
+<<
+DescPort: <<
+Because the perl build system is designed to download source files for
+"extra" perlmodules directly from CPAN, we do not include those "extra" 
+perlmodules in this package.  For that reason, the following packages
+which are Provided by Apple's build of perl5.34.0 on 11.3 are not provided
+here:
+  convert-tnef-pm5340, html-parser-pm5340, 
+  perl-objcbridge-pm5340, scalar-list-utils-pm5340, uri-pm5340, 
+  algorithm-diff-pm5340, class-autouse-pm5340, corefoundation-pm5340, 
+  data-hierarcy-pm5340, freezethaw-pm5340, io-pager-pm5340, 
+  locale-maketext-lexicon-pm5340, perlio-eol-pm5340
+
+On macOS11.0, buildtime miniperl is not properly referenced in some Makefiles.
+So we hardcode the relative position for building.
+
+Time::HiRes misidentifies macOS having clock_nanosleep.
+
+Internal EU::MM turned off errors for implicit function declarations in v7.56.
+We don't want to hide those errors.
+
+Don't get tangled up by fink's netdb.h or assume we need -lbind
+
+Avoid dep on fink's libgdbm and libdb (keeps package thin; see PR
+#852). That means we need to externalize:
+	DB_File
+	GDBM_File
+	NDBM_File
+<<
+DescUsage: <<
+Most perl scripts start with #!/usr/bin/perl which will invoke Apple's
+/usr/bin/perl. This package does not alter /usr/bin/perl. If you wish
+to use this version of perl in scripts, the script should begin with
+#!%p/bin/perl5.40.0 instead of #!/usr/bin/perl
+<<
+Source: mirror:cpan:src/5.0/perl-%v.tar.xz
+Source-Checksum: SHA256(d5325300ad267624cb0b7d512cfdfcd74fa7fe00c455c5b51a6bd53e5e199ef9)
+PatchFile: %n.patch
+PatchFile-MD5: 9ded09be314f9b6e90ea3a3a8906ee30
+Patchfile2: %n-implicit-function-errors.patch
+PatchFile2-MD5: dfffb43c90f28256288d73f1e8249d4a
+PatchFile5: %n-timehires.patch
+PatchFile5-MD5: bbe874541fe10f34c281a71d80def70e
+PatchFile6: %n-libperl-t.patch
+PatchFile6-MD5: b747301b2ee6dfc80ea11d3996d578e9
+PatchFile8: %n-avoid-fink-deps.patch
+PatchFile8-MD5: f261d989182fbab5de848e35aa1ccadb
+PatchScript: <<
+    sed -e 's|@FINK_PREFIX@|%p|g' <  %{PatchFile} | patch -p1
+    patch -p1 < %{PatchFile2}
+    patch -p1 < %{PatchFile5}
+    patch -p1 < %{PatchFile6}
+    patch -p1 < %{PatchFile8}
+<<
+CompileScript: <<
+#!/bin/sh -ev
+	if [[ `sw_vers -productVersion | cut -f 1 -d.` -ge 11 ]]; then
+		# race condition on macOS11 causes miniperl to not propagate sometimes
+		ABSPERL=../../miniperl
+		# /usr/lib/libc* no longer exists
+		perl -pi -e 's,win32|vms|openbsd|bitrig|cygwin,$&|darwin,g' ext/DynaLoader/t/DynaLoader.t
+	fi
+	sleep 5
+	sh Configure \
+	-desr \
+	-Dcc="gcc" \
+	-Dcpp="gcc -E" \
+	-Dprefix=%p \
+	-Dccflags="-I%p/include -MD" \
+	-Dldflags=-L%p/lib \
+	-Dperladmin=none \
+	-Uinstallusrbinperl \
+	-Dprivlib="%p/lib/perl5-core/5.40.0" \
+	-Darchlib="%p/lib/perl5-core/5.40.0/darwin-thread-multi-2level" \
+	-Dman3dir="%p/lib/perl5-core/5.40.0/man/man3" \
+	-Dman3ext=3pm \
+	-Dscriptdir="%p/bin" \
+	-Duseithreads \
+	-Dinc_version_list=none \
+	-Dcf_by="Fink Project" \
+	-Dcf_email="fink-core@lists.sourceforge.net" \
+	-Umydomain \
+	-Dmyhostname="localhost" \
+	-Adefine:startperl="#!%p/bin/perl5.40.0" \
+	-Adefine:perlpath="%p/bin/perl5.40.0" \
+	-Dnoextensions="GDBM_File NDBM_File"
+	make
+<<
+DocFiles: README Copying
+InfoTest: <<
+	# reported Time-HiRes test-failure: https://pastebin.com/jFifJQ06
+	TestScript: <<
+		make test || exit 2
+	<<
+<<
+
+InstallScript: <<
+ make install DESTDIR=%d
+
+ mkdir -p %i/etc/profile.d
+ echo "append_path MANPATH %p/lib/perl5-core/5.40.0/man" >> %i/etc/profile.d/%N-core.csh
+ echo "append_path MANPATH %p/lib/perl5/5.40.0/man" >> %i/etc/profile.d/%N-core.csh
+ echo "append_path MANPATH %p/lib/perl5-core/5.40.0/man" >> %i/etc/profile.d/%N-core.sh
+ echo "append_path MANPATH %p/lib/perl5/5.40.0/man" >> %i/etc/profile.d/%N-core.sh
+ echo "export MANPATH" >> %i/etc/profile.d/%N-core.sh
+ chmod 755 %i/etc/profile.d/%N-core.*
+
+<<
+SplitOff: <<
+ Package: %N-core
+ Conflicts: compress-zlib-pm (<= 1.19-2), crypt-ssleay-pm (<= 0.45-2), dbd-mysql-pm (<= 2.1026-1), dbd-pg-pm (<= 1.21-4), dbd-pg-pm-ssl (<= 1.21-4), dbi-pm (<= 1:1.35-1), digest-md5-pm (<= 2.24-1), digest-sha1-pm (<= 2.02-1), egd (<= 0.8-3), eperl-pm (<= 2.2.14-2), filter-util-pm (<= 1.26-1), fribidi-pm (<= 0.05-2), ftlib-pm (<= 1.2-1), gd-pm (<= 2.06-5), gimp-perl (<= 1.211-4), gtk-perl-pm (<= 0.7008-7), html-parser-pm (<= 3.27-1), http-ghttp-pm (<= 1.07-1), irssi-ssl (<= 0.8.6-3), irssi (<= 0.8.6-2), jcode-pm (<= 0.82-1), libapreq-pm (<= 1.0-1), mac-carbon-pm (<= 0.05-1), macosx-file-pm (<= 0.64-1), mime-base64-pm (<= 2.18-1), net-ssleay-pm (<= 1.22-2), nkf (<= 1.92-1), params-validate-pm (<= 0.57-1), pdl (<= 2.3.2-1), perlmagick-pm (<= 5.5.4-1), pgplot-perl (<= 2.18-4), postgresql-perl (<= 7.3.2-7), postgresql-ssl-perl (<= 7.3.2-7), rrdtool-perl (<= 1.0.41-1), scalar-list-utils-pm (<= 1.11-1), sha-pm (<= 1.2-2), shout-pm (<= 1.0-1), storable-pm (<= 1.0.14-1), string-approx-pm (<= 3.19-1), template-notex-pm (<= 2.08-13), template-pm (<= 2.08-13), term-readkey-pm (<= 2.21-1), term-readline-gnu-pm (<= 1.13-1), text-iconv-pm (<= 1.2-1), time-hires-pm (<= 1.46-1), time-piece-pm (<= 1.08-1), tk-pm (<= 800.024-2), tk-tablematrix-pm (<= 1.01-1), unicode-string-pm (<= 2.07-1), xml-parser-pm (<= 2.31-4), xmms-pm (<= 0.12-2)
+ Provides: <<
+  archive-tar-pm5400,
+  attribute-handlers-pm5400,
+  carp-pm5400,
+  compress-raw-bzip2-pm5400,
+  compress-raw-zlib-pm5400,
+  compress-zlib-pm5400,
+  cpan-meta-requirements-pm5400,
+  data-dumper-pm5400,
+  db-pm5400,
+  devel-peek-pm5400,
+  digest-md5-pm5400,
+  digest-pm5400,
+  digest-sha-pm5400,
+  extutils-cbuilder-pm5400,
+  extutils-makemaker-pm5400,
+  extutils-parsexs-pm5400,
+  file-find-pm5400,
+  file-path-pm5400,
+  file-spec-pm5400,
+  file-temp-pm5400,
+  filter-simple-pm5400,
+  getopt-long-pm5400,
+  http-tiny-pm5400,
+  i18n-langtags-pm5400,
+  io-zlib-pm5400,
+  libnet-pm5400,
+  list-util-pm5400,
+  locale-maketext-pm5400,
+  locale-maketext-simple-pm5400,
+  math-bigint-pm5400,
+  memoize-pm5400,
+  mime-base64-pm5400,
+  module-corelist-pm5400,
+  module-load-conditional-pm5400,
+  module-load-pm5400,
+  params-check-pm5400,
+  perl-ostype-pm5400,
+  pod-escapes-pm5400,
+  pod-simple-pm5400,
+  sys-syslog-pm5400,
+  term-readline-pm5400,
+  test-harness-pm5400,
+  test-simple-pm5400,
+  text-tabs-pm5400,
+  text-wrap-pm5400,
+  time-hires-pm5400,
+  unicode-normalize-pm5400
+ <<
+ Files: bin/perl5.40.0 etc lib/perl5 lib/perl5-core
+ Description: Core files for perl, v. 5.40.0
+ DocFiles: README Copying
+<<
+DescPackaging: <<
+ We split the perl5.40.0 binary and the files in lib/perl5* off as a separate
+ "core" package which does not conflict with other versions of perl.
+ %p/bin/perl and other binaries remain in the perl5400 package, and
+ different versions of perl can be selected by installing a different
+ package instead.
+
+ We now use lib/perl5-core as the main installation directory to avoid
+ conflicts with fink-installed perl modules.
+<<
+Homepage: http://www.cpan.org/
+Maintainer: Fink Core Group <fink-core@lists.sourceforge.net>

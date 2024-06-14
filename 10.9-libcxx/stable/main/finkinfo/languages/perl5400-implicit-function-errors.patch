@@ -1,0 +1,11 @@
+diff -Nurd perl-5.40.0.orig/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Darwin.pm perl-5.40.0/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Darwin.pm
+--- perl-5.40.0.orig/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Darwin.pm	2024-02-26 19:50:14.000000000 -0500
++++ perl-5.40.0/cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Darwin.pm	2024-07-17 19:29:47.000000000 -0400
+@@ -62,7 +62,6 @@
+     foreach (split /\n/, $base) {
+         /^(\S*)\s*=\s*(\S*)$/ and $self->{$1} = $2;
+     };
+-    $self->{CCFLAGS} .= " -Wno-error=implicit-function-declaration";
+ 
+     return $self->{CFLAGS} = qq{
+ CCFLAGS = $self->{CCFLAGS}
