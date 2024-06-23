@@ -109,6 +109,7 @@ CompileScript: <<
 <<
 DocFiles: README Copying
 InfoTest: <<
+	# reported Time-HiRes test-failure: https://pastebin.com/jFifJQ06
 	TestScript: <<
 		make test || exit 2
 	<<
