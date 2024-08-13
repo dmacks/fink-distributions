@@ -109,8 +109,13 @@ CompileScript: <<
 <<
 DocFiles: README Copying
 InfoTest: <<
-	# reported Time-HiRes test-failure: https://pastebin.com/jFifJQ06
+	# Occasional reported Time-HiRes test-failures
+	#	https://pastebin.com/JK68gr5p
+	# likely due to other system processes. See:
+	#	https://github.com/Perl/perl5/pull/20908
 	TestScript: <<
+	#!/bin/sh -ev
+		export PERL_FILE_ATIME_CHANGES=1
 		make test || exit 2
 	<<
 <<
