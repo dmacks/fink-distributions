@@ -1,0 +1,16 @@
+diff -Nurd perl-5.40.0.orig/hints/darwin.sh perl-5.40.0/hints/darwin.sh
+--- perl-5.40.0.orig/hints/darwin.sh	2024-04-16 13:11:38.000000000 -0400
++++ perl-5.40.0/hints/darwin.sh	2024-08-14 23:41:11.000000000 -0400
+@@ -368,6 +368,12 @@
+ # #21556]
+ ccflags="$ccflags -DNO_POSIX_2008_LOCALE"
+ 
++# locale_threads.t fails but attempts at debugging it change the
++# behavior. Darwin locales are a mess anyway and it seems like other
++# hints try to disable some of their features, so here we disable
++# another one that was newly added in moderately recent perls.
++d_duplocale=undef
++
+ ldlibpthname='DYLD_LIBRARY_PATH';
+ 
+ # useshrplib=true results in much slower startup times.

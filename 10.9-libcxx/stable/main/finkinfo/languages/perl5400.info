@@ -66,12 +66,15 @@ PatchFile6: %n-libperl-t.patch
 PatchFile6-MD5: b747301b2ee6dfc80ea11d3996d578e9
 PatchFile8: %n-avoid-fink-deps.patch
 PatchFile8-MD5: f261d989182fbab5de848e35aa1ccadb
+PatchFile9: %n-locale.patch
+PatchFile9-MD5: cdf1e773b4959fca5fe409244e528026
 PatchScript: <<
     sed -e 's|@FINK_PREFIX@|%p|g' <  %{PatchFile} | patch -p1
     patch -p1 < %{PatchFile2}
     patch -p1 < %{PatchFile5}
     patch -p1 < %{PatchFile6}
     patch -p1 < %{PatchFile8}
+    patch -p1 < %{PatchFile9}
 <<
 CompileScript: <<
 #!/bin/sh -ev
@@ -109,13 +112,14 @@ CompileScript: <<
 <<
 DocFiles: README Copying
 InfoTest: <<
-	# Occasional reported Time-HiRes test-failures
-	#	https://pastebin.com/JK68gr5p
-	# likely due to other system processes. See:
-	#	https://github.com/Perl/perl5/pull/20908
 	TestScript: <<
 	#!/bin/sh -ev
+		# Occasional reported Time-HiRes test-failures
+		#	https://pastebin.com/JK68gr5p
+		# likely due to other system processes. See:
+		#	https://github.com/Perl/perl5/pull/20908
 		export PERL_FILE_ATIME_CHANGES=1
+
 		make test || exit 2
 	<<
 <<
