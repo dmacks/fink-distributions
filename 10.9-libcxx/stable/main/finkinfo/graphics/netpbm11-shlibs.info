@@ -8,7 +8,7 @@ BuildDepends: <<
 	fink (>= 0.32.0),
 	fink-package-precedence,
 	libiconv-dev,
-	libjasper.1,
+	libjasper7,
 	libjbig,
 	libjpeg8.2-turbo,
 	libpng16,
@@ -19,10 +19,8 @@ BuildDepends: <<
 <<
 Conflicts: netpbm (<< 9.25-1)
 BuildConflicts: libjpeg9, libjpeg9-32bit
-#Source: http://www.snaggledworks.com/fink/src/netpbm-%v.tar.bz2
-Source: mirror:debian:pool/main/n/netpbm-free/netpbm-free_%v.orig.tar.xz
-Source-Checksum: SHA256(3eadb3469b4be72049efb2699d2e06669c0e1f148d9ecbc5dce697501ba33324)
-SourceDirectory: netpbm-free-%v
+Source: http://www.snaggledworks.com/fink/src/netpbm-%v.tar.bz2
+Source-Checksum: SHA256(6ac81ae7010c7792b473649b491aa8357e488de6cc8b1dd3133485845f2fa170)
 PatchFile: %n.patch
 PatchFile-MD5: 7c4b8257e106ec39de330b205fb1b63e
 PatchScript: <<
@@ -43,8 +41,8 @@ PatchScript: <<
 	[ -x /usr/bin/python ] || pyversion=3
 	perl -pi -e "s|/usr/bin/python|/usr/bin/python$pyversion|g" buildtools/makeman
 	perl -pi -e "s|\@python|\@python$pyversion|g" buildtools/manpage.mk
-	# solve some masking of prototypes in system headers
-	find . -name \*.c | xargs perl -pi -e 's/^(#define _XOPEN_SOURCE)/\/\/\1/'
+	# solve some masking of prototypes in system headers (esp strdup)
+	find . -name \*.c | xargs perl -pi -e s'|^#define _XOPEN_SOURCE 500|#define _XOPEN_SOURCE 600|'
 <<
 UseMaxBuildJobs: false
 CompileScript: <<
@@ -130,7 +128,7 @@ SplitOff2: <<
 	Depends: <<
 		%N (= %v-%r),
 		libiconv,
-		libjasper.1-shlibs,
+		libjasper7-shlibs,
 		libjbig-shlibs,
 		libjpeg8.2-turbo-shlibs,
 		libpng16-shlibs,
@@ -159,9 +157,9 @@ DescPort: <<
 Homepage: http://netpbm.sourceforge.net
 DescPackaging: <<
  Tarball generated with these commands (%v and svn-revision taken from file version.mk):
- svn export -r 4606 http://svn.code.sf.net/p/netpbm/code/advanced/ netpbm-11.3.4
- svn export -r 4606 http://svn.code.sf.net/p/netpbm/code/userguide/ netpbm-userguide-11.3.4
- tar cfj netpbm-11.3.4.tar.bz2 --exclude='\.svn' netpbm-11.3.4 netpbm-userguide-11.3.4
+ svn export -r 4932 http://svn.code.sf.net/p/netpbm/code/advanced/ netpbm-11.07.01
+ svn export -r 4932 http://svn.code.sf.net/p/netpbm/code/userguide/ netpbm-userguide-11.07.01
+ tar cfj netpbm-11.07.01.tar.bz2 --exclude='\.svn' netpbm-11.07.01 netpbm-userguide-11.07.01
 
  pkg-config needed to find X11 for pamx executable
  
