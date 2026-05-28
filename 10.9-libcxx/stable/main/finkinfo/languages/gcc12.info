@@ -1,17 +1,26 @@
 Info2: <<
 Package: gcc12
-Version: 12.2.0
-Revision: 3
+Version: 12.5.0
+Revision: 1
 Type: gccver (12)
 Source: mirror:gnu:gcc/gcc-%v/gcc-%v.tar.xz
-Source-Checksum: SHA256(e549cf9cf3594a00e27b6589d4322d70e0720cdd213f39beb4181e06926230ff)
+Source-Checksum: SHA256(71cd373d0f04615e66c5b5b14d49c1a4c1a08efa7b30625cd240b11bab4062b3)
 #PatchFile: %n.patch
-#PatchFile-MD5: bf4bd5d40bff74246c2b445f62d4597f
+#PatchFile-MD5: 
+# https://github.com/Homebrew/homebrew-core/blob/main/Patches/gcc/gcc-12.4.0.diff
 PatchFile4: %n-arm.patch
-PatchFile4-MD5: 507fd663384c93910bfecb1671df0edc
+PatchFile4-MD5: 4dc324e08f2f725cf4e1f13501f990bb
+# https://github.com/iains/gcc-darwin-arm64/issues/137
+PatchFile5: %n-fix-cfi-startproc-error.patch
+PatchFile5-MD5: a89984fda4fa5c296cc45ecd0dfc3e10
+# https://github.com/iains/gcc-12-branch/commit/99533d94172ed7a24c0e54c4ea97e6ae2260409e
+PatchFile6: %n-float16.patch
+PatchFile6-MD5: 9f60871d2ee1fef45ed8642a7ad96d26
 PatchScript: <<
 	#!/bin/sh -ev
 	patch -p1 < %{PatchFile4}
+	patch -p1 < %{PatchFile5}
+	patch -p1 < %{PatchFile6}
 	# don't update live infodoc dir
 	find . -name Makefile.in | xargs perl -pi -e 's/install-info --version/false/g'
 <<
@@ -52,6 +61,8 @@ BuildDepends: <<
 	libmpfr6,
 	x11-dev
 <<
+# gawk-5.4.0 triggers FTBFS; setting AWK=/usr/bin/awk does not cure it
+BuildConflicts: gawk
 ConfigureParams: <<
 	--prefix=%p/lib/gcc%type_num[gccver] \
 	--mandir=%p/share/man \
@@ -65,6 +76,7 @@ ConfigureParams: <<
 	--program-suffix=-fsf-%type_num[gccver] \
 	--disable-multilib \
 	--enable-stage1-checking \
+	--enable-maintainer-mode \
 	${USE_SYSROOT} \
 	--with-pkgversion="Fink %n %v-%r" \
 	--with-bugurl="https://github.com/fink/fink-distributions/issues"
@@ -196,7 +208,7 @@ InstallScript: <<
 
 	# remove build path from .la files
 	perl -pi -e "s, \-L[^ ']*/%n-%v-%r/darwin_objdir/[^ ']*,,g" `find %i/lib/gcc%type_num[gccver]/lib -name '*.la'`
-	if [ "%m" = "arm" ]; then
+	if [ "%m" = "arm64" ]; then
 		arch=aarch64
 	else
 		arch=%m
@@ -238,23 +250,23 @@ SplitOff: <<
 		lib/gcc%type_num[gccver]/lib/libgomp.1*.dylib
 		lib/gcc%type_num[gccver]/lib/libquadmath.0*.dylib
 		lib/gcc%type_num[gccver]/lib/libatomic.1*.dylib
-		( "%m" != "arm" ) lib/gcc%type_num[gccver]/lib/libasan.8*.dylib
-		( "%m" != "arm" ) lib/gcc%type_num[gccver]/lib/libubsan.1*.dylib
+		( "%m" != "arm64" ) lib/gcc%type_num[gccver]/lib/libasan.8*.dylib
+		( "%m" != "arm64" ) lib/gcc%type_num[gccver]/lib/libubsan.1*.dylib
 	<<
 	Shlibs: <<
 		%p/lib/gcc%type_num[gccver]/lib/libgfortran.5.dylib 6.0.0 %n (>= 12.0.0-1)
 		%p/lib/gcc%type_num[gccver]/lib/libstdc++.6.dylib 7.0.0 %n (>= 12.0.0-1) 
-		( "%m" = "arm" ) %p/lib/gcc%type_num[gccver]/lib/libgcc_s.1.1.dylib 1.0.0 %n (>= 12.0.0-1) 
-		( "%m" != "arm" ) %p/lib/gcc%type_num[gccver]/lib/libgcc_s.1.dylib 1.0.0 %n (>= 12.0.0-1) 
-		( "%m" != "arm" ) !%p/lib/gcc%type_num[gccver]/lib/libgcc_s.1.1.dylib
+		( "%m" = "arm64" ) %p/lib/gcc%type_num[gccver]/lib/libgcc_s.1.1.dylib 1.0.0 %n (>= 12.0.0-1) 
+		( "%m" != "arm64" ) %p/lib/gcc%type_num[gccver]/lib/libgcc_s.1.dylib 1.0.0 %n (>= 12.0.0-1) 
+		( "%m" != "arm64" ) !%p/lib/gcc%type_num[gccver]/lib/libgcc_s.1.1.dylib
 		%p/lib/gcc%type_num[gccver]/lib/libitm.1.dylib 2.0.0 %n (>= 12.0.0-1)
 		%p/lib/gcc%type_num[gccver]/lib/libssp.0.dylib 1.0.0 %n (>= 12.0.0-1) 
 		%p/lib/gcc%type_num[gccver]/lib/libobjc-gnu.4.dylib 5.0.0 %n (>= 12.0.0-1)
 		%p/lib/gcc%type_num[gccver]/lib/libgomp.1.dylib 2.0.0 %n (>= 12.0.0-1) 
 		%p/lib/gcc%type_num[gccver]/lib/libquadmath.0.dylib 1.0.0 %n (>= 12.0.0-1) 
 		%p/lib/gcc%type_num[gccver]/lib/libatomic.1.dylib 4.0.0  %n (>= 12.0.0-1)
-		( "%m" != "arm" ) %p/lib/gcc%type_num[gccver]/lib/libasan.8.dylib 9.0.0  %n (>= 12.0.0-1)
-		( "%m" != "arm" ) %p/lib/gcc%type_num[gccver]/lib/libubsan.1.dylib 2.0.0  %n (>= 12.0.0-1)
+		( "%m" != "arm64" ) %p/lib/gcc%type_num[gccver]/lib/libasan.8.dylib 9.0.0  %n (>= 12.0.0-1)
+		( "%m" != "arm64" ) %p/lib/gcc%type_num[gccver]/lib/libubsan.1.dylib 2.0.0  %n (>= 12.0.0-1)
 	<<
 <<
 SplitOff2: <<
@@ -304,12 +316,8 @@ DescPackaging: <<
  need to add it's own -isysroot flag.
  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=79885
 
- Homebrew patches for arm/aarch64 build and macOS 13 from
- https://github.com/Homebrew/formula-patches/blob/master/gcc/gcc-%v-{arm,ventura}.diff
- - libasan.* and libsubsan.* currently not built on arm.
- There are both "1" and "1.1" versions of libgcc_s.dylib now, but only "1" on arm.
- Manual fixes of @rpath install_names required for aarch64 build to maintain downstream
- package compatibility.
+ gcc uses arch "aarch64" whereas uname (and fink) use "arm64". See:
+ https://github.com/fink/fink-distributions/pull/1080#issuecomment-4559261646
 <<
 Homepage: http://gcc.gnu.org/
 Maintainer: None <fink-devel@lists.sourceforge.net>

@@ -1,0 +1,14 @@
+diff -Naur gcc-13.3-darwin-r0/libgcc/config/aarch64/lse.S gcc-13.3-darwin-r0-fix-cfi-startproc-error/libgcc/config/aarch64/lse.S
+--- gcc-13.3-darwin-r0/libgcc/config/aarch64/lse.S	2024-05-22 09:07:04
++++ gcc-13.3-darwin-r0-fix-cfi-startproc-error/libgcc/config/aarch64/lse.S	2024-09-30 18:06:18
+@@ -197,9 +197,9 @@
+ 	.text
+ 	.balign	16
+ 	.private_extern	_\name
+-	.cfi_startproc
+ _\name:
+ 	BTI_C
++	.cfi_startproc
+ .endm
+ 
+ .macro	ENDFN name

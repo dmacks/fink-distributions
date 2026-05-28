@@ -1,0 +1,80 @@
+From 99533d94172ed7a24c0e54c4ea97e6ae2260409e Mon Sep 17 00:00:00 2001
+From: Iain Sandoe <iain@sandoe.co.uk>
+Date: Sun, 19 Jan 2025 13:54:26 +0000
+Subject: [PATCH] aarch64, Darwin: Support _Float16 for HFmode.
+
+This follows the approach used for the x86_64 backend and allows us to
+consume recent SDK headers that assume _Float16 as a type is available.
+
+All of the hardware that supports arm64-macOS has suitable support so
+that we do not need soft-float support for this.
+
+We keep the changes local to Darwin, and also provide an alias __fp16
+to match with the type used in the builtins headers.
+
+Signed-off-by: Iain Sandoe <iain@sandoe.co.uk>
+---
+ gcc/config/aarch64/aarch64-builtins.cc | 35 +++++++++++++++++++++++---
+ gcc/config/aarch64/aarch64.cc          |  2 ++
+ 2 files changed, 33 insertions(+), 4 deletions(-)
+
+diff --git a/gcc/config/aarch64/aarch64-builtins.cc b/gcc/config/aarch64/aarch64-builtins.cc
+index 2f78fcf6b6c..39edee872e1 100644
+--- a/gcc/config/aarch64/aarch64-builtins.cc
++++ b/gcc/config/aarch64/aarch64-builtins.cc
+@@ -1474,11 +1474,38 @@ aarch64_init_builtin_rsqrt (void)
+ static void
+ aarch64_init_fp16_types (void)
+ {
+-  aarch64_fp16_type_node = make_node (REAL_TYPE);
+-  TYPE_PRECISION (aarch64_fp16_type_node) = 16;
+-  layout_type (aarch64_fp16_type_node);
++  if (TARGET_MACHO)
++    {
++      /* We want to publish _Float16 so that we can consume the headers from
++	 newer SDKs.  Do the same as the x86 backend.  TODO: See if we need
++	 to make __fp16 an alias for this.  */
++      if (!float16_type_node)
++	{
++	  aarch64_fp16_type_node = make_node (REAL_TYPE);
++	  TYPE_PRECISION (aarch64_fp16_type_node) = 16;
++	  SET_TYPE_MODE (aarch64_fp16_type_node, HFmode);
++	  layout_type (aarch64_fp16_type_node);
++	}
++      else
++	aarch64_fp16_type_node = float16_type_node;
++
++      if (!maybe_get_identifier ("_Float16"))
++	(*lang_hooks.types.register_builtin_type)
++	  (aarch64_fp16_type_node, "_Float16");
+ 
+-  (*lang_hooks.types.register_builtin_type) (aarch64_fp16_type_node, "__fp16");
++      if (!maybe_get_identifier ("__fp16"))
++	(*lang_hooks.types.register_builtin_type)
++	  (aarch64_fp16_type_node, "__fp16");
++    }
++  else
++    {
++      aarch64_fp16_type_node = make_node (REAL_TYPE);
++      TYPE_PRECISION (aarch64_fp16_type_node) = 16;
++      layout_type (aarch64_fp16_type_node);
++
++      (*lang_hooks.types.register_builtin_type)
++	(aarch64_fp16_type_node, "__fp16");
++    }
+   aarch64_fp16_ptr_type_node = build_pointer_type (aarch64_fp16_type_node);
+ }
+ 
+diff --git a/gcc/config/aarch64/aarch64.cc b/gcc/config/aarch64/aarch64.cc
+index ef13e465ccd..683d9b8141b 100644
+--- a/gcc/config/aarch64/aarch64.cc
++++ b/gcc/config/aarch64/aarch64.cc
+@@ -21475,6 +21475,8 @@ aarch64_mangle_type (const_tree type)
+     {
+       if (TYPE_MODE (type) == BFmode)
+ 	return "u6__bf16";
++      else if (TARGET_MACHO && TYPE_MODE (type) == HFmode)
++	return "DF16_"; /* Match clang, and later GCC.  */
+       else
+ 	return "Dh";
+     }
